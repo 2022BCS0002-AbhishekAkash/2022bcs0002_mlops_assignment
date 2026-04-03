@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+scikit-learn
+mlflow
+dvc
+dvc-s3
+pandas
+numpy
+pydantic
+boto3
