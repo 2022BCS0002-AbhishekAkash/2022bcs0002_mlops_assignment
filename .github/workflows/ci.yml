@@ -25,7 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install mlflow
+          pip install mlflow dvc[s3]
 
       # ── Step 4: Configure AWS credentials ────────────────────────────
       - name: Configure AWS credentials
@@ -36,24 +36,24 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
-      # ── Step 5: Initialize DVC ───────────────────────────────────────
-      - name: DVC Init
+      # ── Step 5: DVC Pull (get dataset) ───────────────────────────────
+      - name: DVC Pull
         run: |
-          pip install dvc[s3]
-          dvc init --no-scm || true
+          dvc pull
 
-      # ── Step 6: Pull data from S3 ────────────────────────────────────
-      - name: DVC pull
-        run: dvc pull
-
-      # ── Step 7: Train model + MLflow logging ─────────────────────────
+      # ── Step 6: Train model + MLflow logging (IMPORTANT FIX) ─────────
       - name: Train model
         run: |
           export MLFLOW_TRACKING_URI=file:./mlruns
           python train.py
 
-      # ── Step 8: Upload MLflow runs (IMPORTANT FIX) ───────────────────
-      - name: Upload MLflow runs as artifact
+      # ── Step 7: Verify mlruns structure (DEBUG STEP) ─────────────────
+      - name: Check mlruns structure
+        run: |
+          ls -R mlruns
+
+      # ── Step 8: Upload MLflow runs (FULL EXPERIMENT DATA) ────────────
+      - name: Upload MLflow runs
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-runs
@@ -61,7 +61,7 @@ jobs:
           retention-days: 30
 
       # ── Step 9: Upload metrics.json ──────────────────────────────────
-      - name: Upload metrics JSON as artifact
+      - name: Upload metrics JSON
         uses: actions/upload-artifact@v4
         with:
           name: metrics
