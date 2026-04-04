@@ -60,7 +60,7 @@ jobs:
       - name: Train model
         env:
           MLFLOW_TRACKING_URI: http://localhost:5000
-        run: python train_run1.py    # ← change this per push
+        run: python train.py    # ← change this per push
 
       # ── Step 8: Collect MLflow data ───────────────────────────────────
       - name: Collect MLflow data for artifact upload
