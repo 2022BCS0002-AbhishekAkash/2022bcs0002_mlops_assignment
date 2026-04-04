@@ -19,7 +19,7 @@ mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:
 mlflow.set_experiment(f"{ROLL_NO}_experiment")
 
 # ── Load dataset ─────────────────────────────────────────────
-df = pd.read_csv("housing.csv")
+df = pd.read_csv("data/housing.csv")
 
 # ── Preprocessing ─────────────────────────────────────────────
 # Fill missing values
