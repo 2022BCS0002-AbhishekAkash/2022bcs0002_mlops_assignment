@@ -39,31 +39,42 @@ jobs:
       - name: DVC pull
         run: dvc pull
 
-      # ── Step 6: Start MLflow server pointed at S3 ────────────────────
+      # ── Step 6: Start MLflow server ──────────────────────────────────
+      # sqlite = backend (stores runs, params, metrics)
+      # s3     = artifact store (stores model files)
       - name: Start MLflow tracking server
         run: |
           mlflow server \
-            --backend-store-uri s3://${{ secrets.AWS_S3_BUCKET }}/mlflow/tracking \
+            --backend-store-uri sqlite:///mlflow.db \
             --default-artifact-root s3://${{ secrets.AWS_S3_BUCKET }}/mlflow/artifacts \
             --host 0.0.0.0 \
             --port 5000 &
 
           echo "Waiting for MLflow server to start..."
-          sleep 10
+          sleep 15
+
           curl --retry 5 --retry-delay 3 --retry-connrefused http://localhost:5000/health
           echo "MLflow server is up!"
 
-      # ── Step 7: Run the single training script ───────────────────────
+      # ── Step 7: Run training script ───────────────────────────────────
       - name: Train model
         env:
           MLFLOW_TRACKING_URI: http://localhost:5000
-        run: python train.py
+        run: python train_run1.py    # ← change this per push
 
-      # ── Step 8: Sync MLflow data from S3 to local ────────────────────
-      - name: Download MLflow runs from S3
+      # ── Step 8: Collect MLflow data ───────────────────────────────────
+      - name: Collect MLflow data for artifact upload
         run: |
-          mkdir -p mlflow_export
-          aws s3 sync s3://${{ secrets.AWS_S3_BUCKET }}/mlflow/ mlflow_export/
+          mkdir -p mlflow_export/artifacts
+          mkdir -p mlflow_export/tracking
+
+          cp mlflow.db mlflow_export/tracking/mlflow.db
+
+          aws s3 sync s3://${{ secrets.AWS_S3_BUCKET }}/mlflow/artifacts \
+              mlflow_export/artifacts/
+
+          echo "MLflow export contents:"
+          ls -la mlflow_export/
 
       # ── Step 9: Upload MLflow as GitHub Artifact ──────────────────────
       - name: Upload MLflow artifact
@@ -73,7 +84,7 @@ jobs:
           path: mlflow_export/
           retention-days: 30
 
-      # ── Step 10: Upload metrics.json as GitHub Artifact ───────────────
+      # ── Step 10: Upload metrics.json ──────────────────────────────────
       - name: Upload metrics JSON
         uses: actions/upload-artifact@v4
         with:
@@ -88,7 +99,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      # ── Step 12: Build and push Docker image ok ──────────────────────────
+      # ── Step 12: Build and push Docker image ──────────────────────────
       - name: Build and push Docker image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/<YOUR_ROLLNO>-mlops:latest .
