@@ -102,5 +102,5 @@ jobs:
       # ── Step 12: Build and push Docker image ──────────────────────────
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/<YOUR_ROLLNO>-mlops:latest .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/<YOUR_ROLLNO>-mlops:latest
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/2022bcs0002-mlops:latest .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/2022bcs0002-mlops:latest
